@@ -1,28 +1,29 @@
 #!/usr/bin/env python3
 """
-
-Implement a get_hyper method that takes the same arguments
-(and defaults) as get_page and returns a dictionary containing
-the following key-value pairs:
-
+This module contains the class Server that manages API calls to a database
+of popular baby names using pagination.
 """
-
-
-from typing import Tuple, List
 import csv
 import math
+from typing import List, Tuple, Dict, Optional
 
 
 def index_range(page: int, page_size: int) -> Tuple[int, int]:
     """
-    start index and an end index corresponding to the range of
+    Returns a tuple containing a start index and an end index for a particular
+    pagination page.
+
+    Args:
+        page (int): page number
+        page_size (int): number of items per page
+
+    Returns:
+        Tuple[int, int]: tuple containing a start index and an end index
     """
-    # if page is 1, start at 0 and end at page_size
-    # if page is 2, start at ((page-1) * page_size) and
-    # end at (page_size * page)
-    # if page is 3, start at ((page-1) * page_size) and
-    # end at (page_size * page)
-    return ((page-1) * page_size, page_size * page)
+    if page <= 0 or page_size < 0:
+        return (-1, -1)
+
+    return (page_size * (page - 1), page_size * page)
 
 
 class Server:
@@ -45,48 +46,57 @@ class Server:
         return self.__dataset
 
     def get_page(self, page: int = 1, page_size: int = 10) -> List[List]:
-        """return the appropriate page of the dataset"""
-        assert type(page) is int and page > 0
-        assert type(page_size) is int and page_size > 0
-
-        # get the data from the csv
-        data = self.dataset()
-
-        try:
-            # get the index to start and end at
-            start, end = index_range(page, page_size)
-            return data[start:end]
-        except IndexError:
-            return []
-
-    def get_hyper(self, page: int = 1, page_size: int = 10) -> dict:
-        """returns a dictionary containing the following key-value pairs
         """
-        assert type(page) is int and page > 0
-        assert type(page_size) is int and page_size > 0
+        Gets the correct page from the dataset
 
-        data = self.get_page(page, page_size)
-        total_pages = math.ceil(len(self.dataset()) / page_size)
+        Args:
+            page (int, optional): page number. Defaults to 1.
+            page_size (int, optional): number of items per page.
+                                        Defaults to 10.
 
+        Returns:
+            List[List]: list of rows of the dataset
+        """
+        assert type(page) == type(page_size) == int
+        assert page > 0 and page_size > 0
+
+        start: int
+        end: int
         start, end = index_range(page, page_size)
+        dataset: List[List] = self.dataset()
+        if start < 0 or start >= len(dataset) or end >= len(dataset):
+            return []
+        return dataset[start:end]
 
-        # estimating the next page
-        if (page < total_pages):
-            next_page = page+1
-        else:
-            next_page = None
+    def get_hyper(self, page: int = 1, page_size: int = 10) -> Dict:
+        """
+        Gets the correct page from the dataset and returns a dictionary
 
-        # estimating the previous page
-        if (page == 1):
-            prev_page = None
-        else:
-            prev_page = page - 1
+        Args:
+            page (int, optional): page number. Defaults to 1.
+            page_size (int, optional): number of items per page.
 
-        return {'page_size': len(data),
-                'page': page,
-                'data': data,
-                'next_page': next_page,
-                'prev_page': prev_page,
-                'total_pages': total_pages
-                }
+        Returns:
+            Dict: dictionary of the following format:
+            {
+                "page_size": <page_size>,
+                "page": <page>,
+                "data": <page of the dataset>,
+                "next_page": <page of the next page>,
+                "prev_page": <page of the previous page>,
+                "total_pages": <total pages in the dataset>
+            }
+        """
+        data: List[List] = self.get_page(page, page_size)
+        total_pages: int = math.ceil(len(self.dataset()) / page_size)
+        prev_page: Optional[int] = (page - 1) if page > 1 else None
+        next_page: Optional[int] = (page + 1) if page < total_pages else None
+        return {
+            "page_size": len(data),
+            "page": page,
+            "data": data,
+            "next_page": next_page,
+            "prev_page": prev_page,
+            "total_pages": total_pages
+        }
     
