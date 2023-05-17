@@ -1,41 +1,50 @@
-#!/usr/bin/python3
-""" 
-A class called BasicCache that inherits from BaseCaching
+#!/usr/bin/env python3
 """
-
-
-BaseCaching = __import__('base_caching').BaseCaching
+This module implements a FIFO caching system
+"""
+from base_caching import BaseCaching
 
 
 class FIFOCache(BaseCaching):
     """
-        defineing class
+    FIFO cache eviction system that inherits from BaseCaching
+    and is a caching system
     """
-
     def __init__(self):
-        """
-        super vlaue
-        """
         super().__init__()
-    
+        self.item_queue = list()
+
     def put(self, key, item):
+        """
+        Inserts a new key-value pair into the cache
 
+        Arguments:
+            key: key for the dictionary
+            item: value to assign to the key
 
-        if key is None or item is None:
-            pass
-        else:
-           if len(self.cache_data) >= BaseCaching.MAX_ITEMS and key not in self.cache_data.keys():
-               first_key = next(iter(self.cache_data.keys()))
-               del self.cache_data[first_key]
-               print("DISCARD: {}". format(first_key))
-           self.cache_data[key] = item
+        Returns:
+            Nothing
+        """
+        if (key is None) or (item is None):
+            return
 
- 
-    
+        if key not in self.cache_data:
+            if len(self.cache_data) >= self.MAX_ITEMS:
+                first_key = self.item_queue.pop()
+                del self.cache_data[first_key]
+                print("DISCARD: {}".format(first_key))
+            self.item_queue.insert(0, key)
+
+        self.cache_data[key] = item
+
     def get(self, key):
+        """
+        Retrieves a key-value pair from the cache
 
-        """return the value of the data"""
+        Arguments:
+            key: key to retrieve from the cache
 
-        if key is None or key not in self.cache_data.keys():
-            return None
+        Returns:
+            Value in cache linked to key, or None if key not found
+        """
         return self.cache_data.get(key)
